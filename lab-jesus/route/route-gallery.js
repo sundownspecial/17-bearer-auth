@@ -41,17 +41,20 @@ module.exports = router => {
         })
         .catch(error => errorHandler(error,response));
     })
-    .put(bearerAuthMiddleware,bodyParser,(request,response) => {
+    .put(bearerAuthMiddleware, bodyParser, (request,response) => {
       Gallery.findById(request.params._id,request.body)
         .then(gallery => {
-          if(gallery.userId.toString() === request.user._id.toString()){
+          console.log(request.body);
+          if(gallery.userId === request.user._id) {
             gallery.name = request.body.name || gallery.name;
             gallery.description = request.body.description || gallery.description;
-
             return gallery.save();
           }
-
-          return errorHandler(new Error(ERROR_MESSAGE),response);
+          if (request.body.name === undefined || request.body.description === undefined ) {
+            throw new Error('validation');
+          }
+          
+          return new Error('validation');
         })
         .then(() => response.sendStatus(204))
         .catch(error => errorHandler(error,response));
