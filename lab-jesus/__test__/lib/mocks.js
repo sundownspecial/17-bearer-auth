@@ -1,55 +1,47 @@
 'use strict';
 
+const Auth = require('../../model/auth');// vinicio - similar to a user
 const faker = require('faker');
-const Auth = require('../../model/auth');
+const Gallery = require('../../model/gallery');
 
-const mock = module.exports = {};
+// vinicio - {auth:{},gallery:{},mario:{}}
+const mocks = module.exports = {};
+mocks.auth = {};
 
-// Auth Mocks - One, Many, RemoveAll
-mock.auth = {};
-
-mock.auth.createOne = () => new Auth({ name: faker.hacker.adjective() }).save();
-
-mock.auth.createMany = n =>
-  Promise.all(new Array(n).fill(0).map(mock.auth.createOne));
-
-mock.auth.removeAll = () => Promise.all([Auth.remove()]);
-
-
-// Auth Mocks - One, Many, RemoveAll
-mock.auth = {};
-
-mock.auth.createOne = () => {
+mocks.auth.createOne = () => {
   let result = {};
+  result.password = faker.internet.password();
 
-  return mock.auth.createOne()
-    .then(auth => {
-      result.auth = auth;
-      return new Auth({
-        username: faker.internet.username(),
-        password: faker.internet.password(),
-        email: faker.internet.email(),
-      }).save();
-    })
-    .then(auth => result.auth = auth)
-    .then(() => result);
+  return new Auth({
+    username: faker.internet.userName(),
+    email: faker.internet.email(),
+  })
+    .generatePasswordHash(result.password)
+    .then(user => result.user = user)
+    .then(user => user.generateToken())
+    .then(token => result.token = token)
+    .then(() => {
+      return result;
+    });
 };
 
-mock.auth.createMany = n => {
-  let result = {};
-  //requests
-  return mock.auth.createOne()
-    .then(auth => {
-      result.auth = auth;
-      let authProms = new Array(n).fill(0).map(() => new Auth({
-        username: faker.internet.username(),
-        password: faker.internet.password(),
-        email: faker.internet.email(),
-      }).save());
-      return Promise.all(authProms);
-    })
-    .then(auths => result.auths = auths)
-    .then(() => result);
-};
+mocks.gallery = {};
+mocks.gallery.createOne = () => {
+  let resultMock = null;
 
-mock.auth.removeAll = () => Promise.all([Auth.remove()]);
+  return mocks.auth.createOne()
+    .then(createdUserMock => resultMock = createdUserMock)
+    .then(createdUserMock => {
+      return new Gallery({
+        name: faker.internet.domainWord(),
+        description: faker.random.words(15),
+        userId: createdUserMock.user._id,
+      }).save(); // vinicio - something is being saved into Mongo
+    })
+    .then(gallery => {
+      resultMock.gallery = gallery;
+      console.log(resultMock);
+      return resultMock;
+    });
+};
+mocks.auth.removeAll = () => Promise.all([Auth.remove()]);
