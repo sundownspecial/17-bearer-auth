@@ -6,46 +6,62 @@ const mocks = require('../lib/mocks');
 const faker = require('faker');
 require('jest');
 
-describe('POST /api/v1/auth', function() {
-  beforeAll(() => this.base = `:${process.env.PORT}/api/v1/signup`);
+describe('POST /api/v1/signup', function() {
   beforeAll(server.start);
   afterAll(server.stop);
-  afterEach(mocks.auth.removeAll);
+  afterAll(mocks.auth.removeAll);
 
-  describe('Valid requests', () => {
+  describe('Valid Requests', () => {
+    beforeAll(() => {
+      this.mockUser = {
+        username: faker.internet.userName(),
+        password: faker.internet.password(),
+        email: faker.internet.email(),
+      };
 
-
-    it('should return a status of 201', () => {
-      return superagent.post(`${this.base}`)
-        .send({username: faker.internet.userName(), password: faker.internet.password(), email: faker.internet.email()})
-        .then(res => {
-          expect(res.status).toEqual(201);
-        });
-    });
-    it('should return a token if post is succesful', () => {
-      return superagent.post(`${this.base}`)
-        .send({username: faker.internet.userName(), password: faker.internet.password(), email: faker.internet.email()})
-        .then(res => {
-          let rawBuff = Buffer.from(res.body.split('.')[1], 'base64').toString(); 
-          expect(rawBuff).toContain('token');
-        });
+      return superagent.post(`:${process.env.PORT}/api/v1/signup`)
+        .send(this.mockUser)
+        .then(res => this.res = res)
+        .catch(console.log);
     });
 
-    // it('should return a new auth instance', () => {
-    //   expect(this.response.body).toHaveProperty('_id');
-    // });
+    it('should return a valid 201 CREATED status code', () => {
+      expect(this.res.status).toEqual(201);
+    });
+    it('should return a valid token', () => {
+      let tokenParts = this.res.body.split('.');
+      let signature = JSON.parse(Buffer.from(tokenParts[0], 'base64').toString());
+      let token = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+
+      expect(signature.typ).toEqual('JWT');
+      expect(token).toHaveProperty('token');
+    });
   });
 
-  // describe('inValid requests', () => {
-  //   it('should return a status 400 given no request body', () => {
-  //     return superagent.post(`${this.base}`)
-  //       .send()
-  //       .catch(err => expect(err.status).toEqual(400));
-  //   });
-  //   it('should return a status 400 given an improperly formatted body', () => {
-  //     return superagent.post(`${this.base}`)
-  //       .send({gnarf: 200})
-  //       .catch(err => expect(err.status).toEqual(400));
-  //   });
-  // });
+  describe('Invalid Requests', () => {
+    it('should return a 404 NOT FOUND status code', () => {
+      this.mockUser = {
+        username: faker.internet.userName(),
+        password: faker.internet.password(),
+        email: faker.internet.email(),
+      };
+      return superagent.post(`:${process.env.PORT}/api/v1/NOTFOUND`)
+        .send(this.mockUser)
+        .catch(err => expect(err.status).toEqual(404));
+    });
+    it('should return a 401 NOT AUTHORIZED status code', () => {
+      return superagent.post(`:${process.env.PORT}/api/v1/signup`)
+        .send({})
+        .catch(err => expect(err.status).toEqual(401));
+    });
+    it('should return a 409 DUPLICATE KEY status when creating a user that already exists', () => {
+      return superagent.post(`:${process.env.PORT}/api/v1/signup`)
+        .send(this.mockUser)
+        .then(() => {
+          return superagent.post(`:${process.env.PORT}/api/v1/signup`)
+            .send(this.mockUser);
+        })
+        .catch(err => expect(err.status).toEqual(409));
+    });
+  });
 });
