@@ -1,0 +1,59 @@
+{
+  "name": "lab-jesus",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "dependencies": {
+    "bcrypt": "^1.0.3",
+    "body-parser": "^1.18.2",
+    "cors": "^2.8.4",
+    "crypto": "^1.0.1",
+    "dotenv": "^5.0.0",
+    "eslint": "^4.17.0",
+    "express": "^4.16.2",
+    "faker": "^4.1.0",
+    "jest": "^22.1.4",
+    "jsonwebtoken": "^8.1.1",
+    "mongoose": "^5.0.3",
+    "nodemon": "^1.14.12",
+    "superagent": "^3.8.2"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "start:watch": "nodemon index.js",
+    "start:debug": "DEBUG=http* nodemon index.js",
+    "test": "jest -i",
+    "test:watch": "jest -i --watchAll",
+    "test:debug": "DEBUG=http* jest -i",
+    "lint": "eslint .",
+    "lint:test": "npm run lint && npm test",
+    "start-db": "mkdir -p ./data/db && mongod --dbpath ./data/db",
+    "stop-db": "killall mongod"
+  },
+  "devDependencies": {},
+  "jest": {
+    "setupFiles": [
+      "./__test__/lib/jest-setup.js"
+    ],
+    "verbose": true,
+    "testEnvironment": "node",
+    "collectCoverage": true,
+    "coveragePathIgnorePatterns": [
+      "/__test__/"
+    ],
+    "coverageDirectory": "./coverage",
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    }
+  },
+  "author": "Jesus",
+  "license": "MIT"
+}
